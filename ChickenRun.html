@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken Run</title>
+    <!-- Importing a pixel-style font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* General body styling */
+        body {
+            display: flex;
+            /* justify-content: center; */ /* Removed for full screen */
+            /* align-items: center; */ /* Removed for full screen */
+            height: 100vh;
+            margin: 0;
+            background-color: #87CEEB; /* Moved background color here */
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+            overflow: hidden; /* Hide scrollbars */
+        }
+
+        /* Main container for the game */
+        .game-container {
+            position: relative;
+            width: 100vw; /* Full screen width */
+            height: 100vh; /* Full screen height */
+            /* border: 4px solid #fff; */ /* Removed for full screen */
+            /* box-shadow: 0 0 20px rgba(0,0,0,0.5); */ /* Removed for full screen */
+            background-color: transparent; /* Container is now transparent */
+            overflow: hidden; /* Ensures nothing spills out of the game area */
+        }
+        
+        /* The game canvas where the action happens */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Styling for overlay screens (Welcome and Game Over) */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+            z-index: 10;
+        }
+
+        /* Pixelated chicken background for the welcome screen */
+        #welcome-screen {
+             background-image: 
+                /* Chicken Body */
+                linear-gradient(rgba(255, 235, 59, 0.8), rgba(255, 235, 59, 0.8)),
+                /* Chicken Head */
+                linear-gradient(rgba(255, 235, 59, 0.8), rgba(255, 235, 59, 0.8)),
+                /* Beak */
+                linear-gradient(rgba(255, 152, 0, 0.8), rgba(255, 152, 0, 0.8)),
+                /* Comb */
+                linear-gradient(rgba(244, 67, 54, 0.8), rgba(244, 67, 54, 0.8)),
+                /* Eye */
+                linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8));
+            background-size: 
+                60px 50px, /* Body */
+                30px 30px, /* Head */
+                20px 10px, /* Beak */
+                10px 10px, /* Comb */
+                5px 5px;   /* Eye */
+            background-position: 
+                center center, 
+                calc(50% + 25px) calc(50% - 25px),
+                calc(50% + 45px) calc(50% - 15px),
+                calc(50% + 25px) calc(50% - 45px),
+                calc(50% + 35px) calc(50% - 25px);
+            background-repeat: no-repeat;
+        }
+
+        /* Hide the game over screen by default */
+        #game-over-screen {
+            display: none;
+        }
+
+        /* Title styling */
+        .title {
+            font-size: 3rem;
+            text-shadow: 4px 4px 0px #000;
+            margin-bottom: 40px;
+        }
+        
+        .game-over-text {
+             font-size: 4rem;
+             color: #F44336;
+             text-shadow: 4px 4px 0px #000;
+             margin-bottom: 40px;
+        }
+
+        /* Play button styling */
+        .play-button {
+            width: 150px;
+            height: 150px;
+            background-color: #4CAF50; /* Green color */
+            border-radius: 50%; /* Makes it a circle */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border: 4px solid white;
+            box-shadow: 0 0 0 4px #4CAF50, 0 5px 10px rgba(0,0,0,0.5); /* Pixelated border effect */
+            transition: transform 0.1s ease;
+        }
+
+        .play-button:hover {
+            transform: scale(1.1);
+        }
+
+        .play-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Score display styling */
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2rem;
+            text-shadow: 3px 3px 0px #000;
+            z-index: 5;
+        }
+
+        #high-score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 2rem;
+            text-shadow: 3px 3px 0px #000;
+            z-index: 5;
+        }
+
+        .high-score-text {
+            font-size: 1.5rem;
+            margin-top: 20px;
+            text-shadow: 2px 2px 0px #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- The Welcome Screen -->
+        <div id="welcome-screen" class="overlay">
+            <h1 class="title">Welcome to Chicken Run</h1>
+            <div id="start-button" class="play-button">Play</div>
+            <div id="welcome-high-score" class="high-score-text">High Score: 0</div>
+        </div>
+
+        <!-- The Game Over Screen -->
+        <div id="game-over-screen" class="overlay">
+            <h1 class="game-over-text">Game Over!</h1>
+            <div id="play-again-button" class="play-button">Play Again</div>
+            <div id="game-over-high-score" class="high-score-text">High Score: 0</div>
+        </div>
+
+        <!-- Score Display -->
+        <div id="score">Score: 0</div>
+        <div id="high-score">High Score: 0</div>
+
+        <!-- The Game Canvas -->
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const startButton = document.getElementById('start-button');
+        const playAgainButton = document.getElementById('play-again-button');
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('high-score');
+        const welcomeHighScoreDisplay = document.getElementById('welcome-high-score');
+        const gameOverHighScoreDisplay = document.getElementById('game-over-high-score');
+
+        // --- Game Setup ---
+        let gameContainer = document.querySelector('.game-container');
+        canvas.width = gameContainer.clientWidth;
+        canvas.height = gameContainer.clientHeight;
+        
+        // --- Game Variables ---
+        let score;
+        let gameSpeed;
+        let isGameOver;
+        let obstacles = [];
+        let frame = 0;
+        let nextObstacleFrame = 100;
+        let highScore = 0;
+
+        // --- Constants ---
+        const GRAVITY = 0.5;
+        const JUMP_STRENGTH = -12.5; // Increased from -10 for a higher jump
+        const GROUND_HEIGHT = 50;
+
+        // --- Player (Chicken) Object ---
+        const player = {
+            x: 50,
+            y: canvas.height - GROUND_HEIGHT - 40,
+            width: 40,
+            height: 40,
+            velocityY: 0,
+            draw() {
+                // Main body
+                ctx.fillStyle = '#FFEB3B'; // Yellow
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                // Beak
+                ctx.fillStyle = '#FF9800'; // Orange
+                ctx.fillRect(this.x + this.width, this.y + 15, 10, 5);
+                // Comb
+                ctx.fillStyle = '#F44336'; // Red
+                ctx.fillRect(this.x + 15, this.y - 5, 10, 5);
+                // Eye
+                ctx.fillStyle = '#000000'; // Black
+                ctx.fillRect(this.x + 25, this.y + 10, 5, 5);
+            },
+            update() {
+                this.velocityY += GRAVITY;
+                this.y += this.velocityY;
+
+                // Prevent falling through the ground
+                const groundY = canvas.height - GROUND_HEIGHT - this.height;
+                if (this.y > groundY) {
+                    this.y = groundY;
+                    this.velocityY = 0;
+                }
+            },
+            jump() {
+                // Can only jump if on the ground
+                const groundY = canvas.height - GROUND_HEIGHT - this.height;
+                if (this.y === groundY) {
+                    this.velocityY = JUMP_STRENGTH;
+                }
+            }
+        };
+        
+        // --- Obstacle Class ---
+        class Obstacle {
+            constructor() {
+                // An array of possible obstacle types
+                const obstacleTypes = ['spike', 'cactus', 'wall', 'fence'];
+                this.type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+
+                this.x = canvas.width;
+                this.passed = false;
+
+                // Set properties based on the chosen type
+                switch (this.type) {
+                    case 'spike':
+                        this.width = 20;
+                        this.height = 40;
+                        this.y = canvas.height - GROUND_HEIGHT - this.height;
+                        break;
+                    case 'cactus':
+                        this.width = 30;
+                        this.height = 60;
+                        this.y = canvas.height - GROUND_HEIGHT - this.height;
+                        break;
+                    case 'wall':
+                        this.width = 40;
+                        this.height = 80; // Taller, requires a better jump
+                        this.y = canvas.height - GROUND_HEIGHT - this.height;
+                        break;
+                    case 'fence':
+                        this.width = 50;
+                        this.height = 50;
+                        this.y = canvas.height - GROUND_HEIGHT - this.height;
+                        break;
+                }
+            }
+            
+            draw() {
+                 // Draw the obstacle based on its type
+                switch (this.type) {
+                    case 'spike':
+                        ctx.fillStyle = '#607D8B'; // Slate Gray
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y + this.height);
+                        ctx.lineTo(this.x + this.width / 2, this.y);
+                        ctx.lineTo(this.x + this.width, this.y + this.height);
+                        ctx.closePath();
+                        ctx.fill();
+                        break;
+                    case 'cactus':
+                        ctx.fillStyle = '#4CAF50'; // Green
+                        // Main body
+                        ctx.fillRect(this.x + 10, this.y, 10, this.height);
+                        // Arms
+                        ctx.fillRect(this.x, this.y + 10, 10, 20);
+                        ctx.fillRect(this.x + 20, this.y + 20, 10, 20);
+                        break;
+                    case 'wall':
+                        ctx.fillStyle = '#795548'; // Brown
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                        // Brick lines for detail
+                        ctx.strokeStyle = '#5D4037';
+                        ctx.lineWidth = 2;
+                        for (let i = 1; i < this.height / 20; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(this.x, this.y + i * 20);
+                            ctx.lineTo(this.x + this.width, this.y + i * 20);
+                            ctx.stroke();
+                        }
+                        break;
+                    case 'fence':
+                        ctx.fillStyle = '#A1887F'; // Brownish gray
+                        // Posts
+                        ctx.fillRect(this.x, this.y, 10, this.height);
+                        ctx.fillRect(this.x + this.width - 10, this.y, 10, this.height);
+                        // Rails
+                        ctx.fillRect(this.x, this.y + 10, this.width, 5);
+                        ctx.fillRect(this.x, this.y + 30, this.width, 5);
+                        break;
+                }
+            }
+
+            update() {
+                this.x -= gameSpeed;
+            }
+        }
+        
+        // --- Cloud Class ---
+        class Cloud {
+            constructor(x, y, size) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.arc(this.x + this.size * 1.2, this.y + this.size * 0.2, this.size * 1.2, 0, Math.PI * 2);
+                ctx.arc(this.x + this.size * 2.5, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            update() {
+                this.x -= gameSpeed / 4; // Clouds move slower
+                if (this.x + this.size * 3 < 0) {
+                    this.x = canvas.width + Math.random() * 200;
+                }
+            }
+        }
+        let clouds = [
+             new Cloud(100, 50, 20),
+             new Cloud(400, 80, 30),
+             new Cloud(700, 60, 25)
+        ];
+
+
+        // --- Game Functions ---
+        
+        function handleObstacles() {
+            // Generate new obstacles at random intervals
+            if (frame > nextObstacleFrame) {
+                 obstacles.push(new Obstacle());
+                 nextObstacleFrame += Math.floor(Math.random() * 100) + 90 - (gameSpeed);
+            }
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].update();
+                obstacles[i].draw();
+                
+                // Score point if player passes an obstacle
+                if (obstacles[i].x < player.x && !obstacles[i].passed) {
+                    score++;
+                    gameSpeed += 0.1; // Increase difficulty
+                    obstacles[i].passed = true;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                }
+
+                // Check for collision
+                if (
+                    player.x < obstacles[i].x + obstacles[i].width &&
+                    player.x + player.width > obstacles[i].x &&
+                    player.y < obstacles[i].y + obstacles[i].height &&
+                    player.y + player.height > obstacles[i].y
+                ) {
+                    isGameOver = true;
+                }
+
+                // Remove obstacles that are off-screen
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+        
+        function drawBackground() {
+            // Sky
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Clouds
+            clouds.forEach(cloud => {
+                cloud.update();
+                cloud.draw();
+            });
+
+            // Ground
+            ctx.fillStyle = '#2E7D32'; // Green grass
+            ctx.fillRect(0, canvas.height - GROUND_HEIGHT, canvas.width, GROUND_HEIGHT);
+        }
+
+        // --- Game Loop ---
+        function animate() {
+            if (isGameOver) {
+                gameOverScreen.style.display = 'flex';
+                // Check for new high score
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('chickenRunHighScore', highScore);
+                    updateHighScoreDisplay();
+                }
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawBackground();
+            
+            player.update();
+            player.draw();
+            
+            handleObstacles();
+
+            frame++;
+            requestAnimationFrame(animate);
+        }
+
+        // --- Game Initialization ---
+        function init() {
+            score = 0;
+            gameSpeed = 5;
+            isGameOver = false;
+            obstacles = [];
+            frame = 0;
+            nextObstacleFrame = 150;
+            player.y = canvas.height - GROUND_HEIGHT - player.height;
+            player.velocityY = 0;
+            scoreDisplay.textContent = `Score: 0`;
+            
+            welcomeScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+
+            animate();
+        }
+
+        // --- High Score Functions ---
+        function loadHighScore() {
+            const savedHighScore = localStorage.getItem('chickenRunHighScore');
+            if (savedHighScore) {
+                highScore = parseInt(savedHighScore, 10);
+            }
+            updateHighScoreDisplay();
+        }
+
+        function updateHighScoreDisplay() {
+            const highScoreText = `High Score: ${highScore}`;
+            highScoreDisplay.textContent = highScoreText;
+            welcomeHighScoreDisplay.textContent = highScoreText;
+            gameOverHighScoreDisplay.textContent = highScoreText;
+        }
+
+        // --- Event Listeners ---
+        startButton.addEventListener('click', init);
+        playAgainButton.addEventListener('click', init);
+        
+        // Listen for jump input
+        window.addEventListener('mousedown', () => {
+             if (!isGameOver) player.jump();
+        });
+        
+         window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !isGameOver) {
+                player.jump();
+            }
+        });
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            canvas.width = gameContainer.clientWidth;
+            canvas.height = gameContainer.clientHeight;
+        });
+
+        // Load the high score when the script first runs
+        loadHighScore();
+
+    </script>
+</body>
+</html>
+
